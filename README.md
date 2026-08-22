@@ -13,19 +13,24 @@
 ## 项目结构
 
 ```
-suijiyiyan/
-├── main.py                      # 主程序
-├── api.py                       # 一言 API 接口
-├── serverchan.py                # Server酱 通知
-├── email_sender.py              # 邮件通知
-├── email_template.html          # 邮件 HTML 模板
+one-word-email-notification/
+├── main.py                      # 程序入口（python main.py）
+├── app/                         # 应用代码包
+│   ├── __init__.py
+│   ├── api.py                   # 一言 API 接口
+│   └── notifiers/               # 通知渠道
+│       ├── __init__.py          # 统一导出各通知函数
+│       ├── serverchan.py        # Server酱 微信推送
+│       └── email_sender.py      # 邮件通知
+├── templates/
+│   └── email_template.html      # 邮件 HTML 模板
 ├── requirements.txt             # Python 依赖
-├── .env                         # 环境变量配置
 ├── .env.example                 # 环境变量示例
 ├── README.md                    # 项目文档
-├── .gitignore                   # Git 忽略
+├── LICENSE                      # MIT 许可证
+├── .gitignore                   # Git 忽略规则
 └── .github/workflows/
-    └── daily.yml               # GitHub Actions 配置
+    └── daily.yml                # GitHub Actions 配置
 ```
 
 ## 快速开始
@@ -150,9 +155,8 @@ Fork 本项目到你的 GitHub 账户。
 - 随机延迟的加入也会影响确切的启动时间
 
 **执行逻辑：**
-- 脚本会先检查当天是否已成功执行过
-- 如果已执行，则跳过后续操作
-- 如果未执行，则按照配置的通知方式发送一言
+- 从接口盒子 API 获取随机一言
+- 根据 `NOTIFY_TYPE` 配置，通过 Server酱 和/或 邮件 发送通知
 
 ### GitHub Actions 工作流文件
 
@@ -171,18 +175,28 @@ Cron 表达式格式：`分 小时 日 月 周`
 
 北京时间 = UTC 时间 + 8 小时
 
+### 防止定时任务被自动停用
+
+GitHub 会自动停用 **60 天内没有任何提交** 的仓库中的定时工作流（状态变为 `disabled_inactivity`）。
+
+本仓库的工作流已内置 `keepalive` 任务：当距最后一次提交超过 50 天时，自动创建一个空提交重置计时器，无需人工干预。
+
+如果工作流已被停用，可通过以下任一方式重新启用：
+- 网页：进入 **Actions** 选项卡，选中对应工作流，点击 **Enable workflow**
+- 命令行：`gh api -X PUT repos/<用户名>/<仓库名>/actions/workflows/daily.yml/enable`
+
 ## 开发说明
 
 ### 添加新的通知方式
 
-1. 创建新的通知模块文件（如 `wechat.py`）
+1. 在 `app/notifiers/` 下创建新的通知模块文件（如 `wechat.py`）
 2. 实现通知函数，返回 `True`/`False`
-3. 在 `main.py` 中导入并集成
+3. 在 `app/notifiers/__init__.py` 中导出新函数，并在 `main.py` 中集成
 4. 更新 `.env.example` 和 `README.md`
 
 ### 邮件模板
 
-邮件模板文件：`email_template.html`
+邮件模板文件：`templates/email_template.html`
 
 可以修改模板样式，但需要保留以下变量：
 - `{content}` - 一言内容

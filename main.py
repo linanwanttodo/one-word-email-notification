@@ -1,17 +1,20 @@
 """
-随机一言 - 主程序
+随机一言 - 主程序入口
 获取一言并根据配置发送通知
+
+运行方式（在项目根目录）:
+    python main.py
 """
 
 import os
+
 from dotenv import load_dotenv
 
-# 加载环境变量
+# 加载环境变量（.env 文件）
 load_dotenv()
 
-from api import get_hitokoto
-from serverchan import send_serverchan
-from email_sender import send_email
+from app.api import get_hitokoto
+from app.notifiers import send_serverchan, send_email
 
 
 def main():
@@ -21,7 +24,8 @@ def main():
     print("=" * 60)
 
     # 获取一言
-    print("\n正在获取一言...")
+    print()
+    print("正在获取一言...")
     result = get_hitokoto()
 
     if not result:
@@ -29,7 +33,8 @@ def main():
         return
 
     message = result['text']
-    print(f"[成功] 获取成功: {message}\n")
+    print(f"[成功] 获取成功: {message}")
+    print()
 
     # 获取通知方式
     notify_type = os.getenv('NOTIFY_TYPE', '').lower()
@@ -47,15 +52,19 @@ def main():
     # 发送通知
     for notifier in notifiers:
         if notifier == 'serverchan':
-            print("\n[Server酱]")
+            print()
+            print("[Server酱]")
             send_serverchan(message, "每日一言")
         elif notifier == 'email':
-            print("\n[邮件]")
+            print()
+            print("[邮件]")
             send_email(message, "随机一言")
         else:
-            print(f"\n[警告] 未知的通知方式: {notifier}")
+            print()
+            print(f"[警告] 未知的通知方式: {notifier}")
 
-    print("\n" + "=" * 60)
+    print()
+    print("=" * 60)
     print("完成！")
     print("=" * 60)
 

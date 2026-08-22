@@ -37,3 +37,29 @@ jobs:
           EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
           EMAIL_TO: ${{ secrets.EMAIL_TO }}
         run: python main.py
+
+  # 防止 GitHub 因仓库 60 天无提交而自动停用定时任务（disabled_inactivity）
+  # 原理：当距最后一次提交超过 50 天时，自动创建一个空提交，重置不活跃计时器
+  keepalive:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Keep repo alive
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          LAST_COMMIT=$(git log -1 --format=%ct)
+          NOW=$(date +%s)
+          DAYS=$(( (NOW - LAST_COMMIT) / 86400 ))
+          echo "距上次提交已 ${DAYS} 天"
+          if [ "$DAYS" -ge 50 ]; then
+            git commit --allow-empty -m "chore: keepalive [skip ci]"
+            git push
+            echo "已创建 keepalive 空提交，重置 60 天不活跃计时器"
+          else
+            echo "仓库仍然活跃，无需 keepalive"
+          fi

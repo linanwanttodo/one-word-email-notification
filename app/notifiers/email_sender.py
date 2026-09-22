@@ -5,8 +5,10 @@
 
 import os
 import smtplib
+import html as html_module
 from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -72,16 +74,19 @@ def send_email(message, title="随机一言"):
         else:
             # 使用 HTML 模板
             # 替换变量
-            date_str = datetime.now().strftime('%Y年%m月%d日 %H:%M')
-            html_content = template.replace('{content}', message).replace('{date}', date_str)
+            date_str = datetime.now(ZoneInfo(os.getenv('TZ', 'Asia/Shanghai'))).strftime('%Y年%m月%d日 %H:%M')
+            html_content = template.replace('{content}', html_module.escape(message)).replace('{date}', date_str)
 
             msg = MIMEMultipart('alternative')
             msg.attach(MIMEText(message, 'plain', 'utf-8'))
             msg.attach(MIMEText(html_content, 'html', 'utf-8'))
 
+        # 支持多收件人（逗号分隔）
+        recipients = [addr.strip() for addr in email_to.split(',') if addr.strip()]
+
         msg['Subject'] = title
         msg['From'] = formataddr(['随机一言', email_from])
-        msg['To'] = email_to
+        msg['To'] = ', '.join(recipients)
 
         # 连接 SMTP 服务器
         if smtp_port == '465':
@@ -91,10 +96,10 @@ def send_email(message, title="随机一言"):
             server.starttls()
 
         server.login(username, password)
-        server.sendmail(email_from, [email_to], msg.as_string())
+        server.sendmail(email_from, recipients, msg.as_string())
         server.quit()
 
-        print(f"[成功] 邮件: 已发送至 {email_to}")
+        print(f"[成功] 邮件: 已发送至 {', '.join(recipients)}")
         return True
 
     except smtplib.SMTPAuthenticationError:

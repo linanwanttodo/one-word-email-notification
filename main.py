@@ -7,6 +7,7 @@
 """
 
 import os
+import sys
 
 from dotenv import load_dotenv
 
@@ -49,24 +50,32 @@ def main():
     print("发送通知")
     print("-" * 60)
 
-    # 发送通知
+    # 发送通知，收集结果
+    results = []
+
     for notifier in notifiers:
         if notifier == 'serverchan':
             print()
             print("[Server酱]")
-            send_serverchan(message, "每日一言")
+            results.append(send_serverchan(message, "每日一言"))
         elif notifier == 'email':
             print()
             print("[邮件]")
-            send_email(message, "随机一言")
+            results.append(send_email(message, "随机一言"))
         else:
             print()
             print(f"[警告] 未知的通知方式: {notifier}")
+            results.append(False)
 
     print()
     print("=" * 60)
-    print("完成！")
-    print("=" * 60)
+    if results and all(results):
+        print("完成！")
+        print("=" * 60)
+    else:
+        print("完成，但部分或全部通知发送失败")
+        print("=" * 60)
+        sys.exit(1)
 
 
 if __name__ == '__main__':

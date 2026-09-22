@@ -54,10 +54,11 @@ def send_serverchan(message, title="每日一言"):
         print("[失败] Server酱: 请求超时")
         return False
     except requests.exceptions.RequestException as e:
-        print(f"[失败] Server酱: {e}")
+        # 异常文本可能包含完整 URL（含 SendKey），打印前脱敏
+        print(f"[失败] Server酱: {str(e).replace(key, '***')}")
         return False
     except Exception as e:
-        print(f"[失败] Server酱: {e}")
+        print(f"[失败] Server酱: {str(e).replace(key, '***')}")
         return False
 
 
